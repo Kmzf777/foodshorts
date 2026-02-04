@@ -1,36 +1,161 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FoodShorts 🍕📱
 
-## Getting Started
+Cardápio digital interativo com vídeos curtos verticais (9:16), estilo TikTok/Reels.
 
-First, run the development server:
+## Sobre o Projeto
 
-```bash
+FoodShorts é um SaaS B2B que transforma a experiência de pedidos em restaurantes através de vídeos curtos e imersivos dos pratos. Com uma interface intuitiva estilo redes sociais, os clientes navegam pelo cardápio com scroll vertical, visualizam os pratos em vídeo e fazem pedidos de forma rápida e envolvente.
+
+### Principais Funcionalidades
+
+- **VideoFeed**: Experiência imersiva estilo TikTok para visualização do cardápio
+- **QR Code por Mesa**: Cada mesa tem seu QR Code único para rastreamento de pedidos
+- **Modo Delivery**: Suporte para pedidos delivery com autenticação de clientes
+- **Dashboard Completo**: Painel de gerenciamento com métricas em tempo real
+- **VideoUploader**: Upload de vídeos com processamento automático (crop 9:16, até 15s)
+- **Integração de Pagamento**: AbacatePay para assinaturas via PIX
+
+## Stack Tecnológica
+
+- **Frontend**: Next.js 14.2+ (App Router) + TypeScript 5.6+
+- **Estilização**: Tailwind CSS 3.4+ + Radix UI
+- **Backend**: Supabase (PostgreSQL + Auth + Storage)
+- **State Management**: Zustand 4.5+
+- **Vídeo Processing**: FFmpeg.wasm 0.12+
+- **Pagamentos**: AbacatePay API v1
+- **Forms**: React Hook Form + Zod
+
+## Estrutura do Projeto
+
+\`\`\`
+src/
+├── app/
+│   ├── (auth)/              # Login e cadastro
+│   ├── (marketing)/         # Landing page e pricing
+│   ├── (dashboard)/         # Painel administrativo
+│   ├── cardapio/[slug]/    # Cardápio público
+│   └── api/                 # API routes
+├── components/
+│   ├── ui/                  # Componentes base (Radix UI)
+│   ├── cardapio/           # VideoFeed, ProductCard, etc.
+│   ├── dashboard/          # Componentes admin
+│   └── shared/             # Componentes compartilhados
+├── lib/                     # Utilitários e configs
+├── hooks/                   # Custom hooks
+├── stores/                  # Zustand stores
+├── types/                   # TypeScript types
+└── validations/            # Schemas Zod
+\`\`\`
+
+## Setup do Projeto
+
+### 1. Pré-requisitos
+
+- Node.js 20+ e npm
+- Conta no Supabase (https://supabase.com)
+- Conta no AbacatePay (https://abacatepay.com)
+
+### 2. Instalação
+
+\`\`\`bash
+# Clone o repositório
+git clone <url>
+cd FOODSHORTS
+
+# Instale as dependências
+npm install
+\`\`\`
+
+### 3. Configuração do Supabase
+
+1. Crie um novo projeto no Supabase Dashboard
+2. Execute o schema SQL (ver seção "Schema SQL" abaixo)
+3. Configure os buckets de storage:
+   - Nome: \`videos\` (público)
+   - Nome: \`logos\` (público)
+
+### 4. Variáveis de Ambiente
+
+Crie um arquivo \`.env.local\`:
+
+\`\`\`env
+# SUPABASE
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# ABACATEPAY
+ABACATEPAY_API_KEY=your_api_key
+ABACATEPAY_WEBHOOK_SECRET=your_webhook_secret
+
+# APP
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=FoodShorts
+
+# PRICING (em centavos)
+MONTHLY_PRICE_CENTS=4990
+ANNUAL_PRICE_CENTS=35880
+\`\`\`
+
+### 5. Executar o Projeto
+
+\`\`\`bash
+# Desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# Build para produção
+npm run build
+npm start
+\`\`\`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Schema SQL
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Execute o SQL abaixo no Supabase SQL Editor:
 
-## Learn More
+Ver arquivo \`supabase-schema.sql\` na raiz do projeto.
 
-To learn more about Next.js, take a look at the following resources:
+## Fluxos Principais
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Fluxo Restaurante
+1. Cadastro → Escolha de plano → Pagamento (AbacatePay)
+2. Configuração do restaurante (nome, logo, número de mesas)
+3. Criação de categorias e produtos com vídeos
+4. Compartilhamento do link do cardápio
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Fluxo Cliente (Mesa)
+1. Acesso via QR Code: \`/cardapio/[slug]?mesa=N\`
+2. Navegação por vídeos (scroll vertical)
+3. Adição de produtos ao carrinho
+4. Confirmação com nome para chamar
+5. Pedido enviado ao dashboard do restaurante
 
-## Deploy on Vercel
+### Fluxo Cliente (Delivery)
+1. Acesso: \`/cardapio/[slug]\`
+2. Navegação por vídeos
+3. Login/cadastro (se delivery ativado)
+4. Preenchimento de endereço
+5. Seleção de forma de pagamento
+6. Confirmação do pedido
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Vercel (Recomendado)
+
+\`\`\`bash
+# Instale a CLI da Vercel
+npm i -g vercel
+
+# Deploy
+vercel
+\`\`\`
+
+Configure as variáveis de ambiente no dashboard da Vercel.
+
+### Webhooks do AbacatePay
+
+Configure a URL do webhook no dashboard do AbacatePay:
+\`https://seu-dominio.com/api/webhooks/abacatepay\`
+
+## Licença
+
+Todos os direitos reservados © 2024 FoodShorts

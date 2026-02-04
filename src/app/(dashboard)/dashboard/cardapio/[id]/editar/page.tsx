@@ -1,0 +1,311 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+
+import { createClient } from '@/lib/supabase/client'
+import { useRestaurant } from '@/hooks/useRestaurant'
+import { productSchema, type ProductInput } from '@/validations/product'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { VideoUploader } from '@/components/dashboard/VideoUploader'
+import type { Category, Product } from '@/types'
+
+export default function EditarProdutoPage() {
+  const router = useRouter()
+  const params = useParams()
+  const productId = params.id as string
+  const { restaurant } = useRestaurant()
+  const [product, setProduct] = useState<Product | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
+  const [videoData, setVideoData] = useState<{
+    blob: Blob
+    thumbnail: Blob
+    duration: number
+  } | null>(null)
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<ProductInput>({
+    resolver: zodResolver(productSchema),
+  })
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!restaurant) return
+
+      const supabase = createClient()
+
+      const [productRes, categoriesRes] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*')
+          .eq('id', productId)
+          .eq('restaurant_id', restaurant.id)
+          .single(),
+        supabase
+          .from('categories')
+          .select('*')
+          .eq('restaurant_id', restaurant.id)
+          .eq('is_active', true)
+          .order('sort_order'),
+      ])
+
+      if (productRes.data) {
+        const p = productRes.data as Product
+        setProduct(p)
+        reset({
+          name: p.name,
+          description: p.description || '',
+          price: p.price,
+          category_id: p.category_id,
+          is_recommended: p.is_recommended,
+          is_active: p.is_active,
+        })
+      }
+
+      setCategories((categoriesRes.data as Category[]) || [])
+      setIsFetching(false)
+    }
+
+    if (restaurant) {
+      fetchData()
+    }
+  }, [restaurant, productId, reset])
+
+  async function onSubmit(data: ProductInput) {
+    if (!restaurant || !product) return
+
+    setIsLoading(true)
+    const supabase = createClient()
+
+    try {
+      let videoUrl = product.video_url
+      let thumbnailUrl = product.video_thumbnail_url
+      let videoDuration = product.video_duration
+
+      // Upload new video if provided
+      if (videoData) {
+        const videoFileName = `${restaurant.id}/${Date.now()}.mp4`
+        const { error: videoError } = await supabase.storage
+          .from('videos')
+          .upload(videoFileName, videoData.blob, {
+            contentType: 'video/mp4',
+          })
+
+        if (videoError) throw videoError
+
+        const thumbFileName = `${restaurant.id}/${Date.now()}_thumb.jpg`
+        const { error: thumbError } = await supabase.storage
+          .from('videos')
+          .upload(thumbFileName, videoData.thumbnail, {
+            contentType: 'image/jpeg',
+          })
+
+        if (thumbError) throw thumbError
+
+        const { data: newVideoUrl } = supabase.storage
+          .from('videos')
+          .getPublicUrl(videoFileName)
+
+        const { data: newThumbUrl } = supabase.storage
+          .from('videos')
+          .getPublicUrl(thumbFileName)
+
+        videoUrl = newVideoUrl.publicUrl
+        thumbnailUrl = newThumbUrl.publicUrl
+        videoDuration = videoData.duration
+      }
+
+      // Update product
+      const { error: productError } = await supabase
+        .from('products')
+        .update({
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          category_id: data.category_id || null,
+          is_recommended: data.is_recommended,
+          is_active: data.is_active,
+          video_url: videoUrl,
+          video_thumbnail_url: thumbnailUrl,
+          video_duration: videoDuration,
+        })
+        .eq('id', productId)
+
+      if (productError) throw productError
+
+      toast.success('Produto atualizado com sucesso!')
+      router.push('/dashboard/cardapio')
+    } catch (error) {
+      toast.error('Erro ao atualizar produto')
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Produto nao encontrado</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Editar Produto</h1>
+        <p className="text-muted-foreground">
+          Atualize as informacoes do produto
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Informacoes do Produto</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Video Upload */}
+            <div className="space-y-2">
+              <Label>Video do Produto</Label>
+              <VideoUploader
+                value={product.video_thumbnail_url || product.video_url}
+                onChange={(blob, thumbnail, duration) => {
+                  setVideoData({ blob, thumbnail, duration })
+                }}
+                disabled={isLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para manter o video atual
+              </p>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome *</Label>
+              <Input id="name" {...register('name')} />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descricao</Label>
+              <Textarea id="description" {...register('description')} />
+              {errors.description && (
+                <p className="text-sm text-destructive">
+                  {errors.description.message}
+                </p>
+              )}
+            </div>
+
+            {/* Price */}
+            <div className="space-y-2">
+              <Label htmlFor="price">Preco *</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                {...register('price', { valueAsNumber: true })}
+              />
+              {errors.price && (
+                <p className="text-sm text-destructive">{errors.price.message}</p>
+              )}
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select
+                defaultValue={product.category_id || 'none'}
+                onValueChange={(value) =>
+                  setValue('category_id', value === 'none' ? null : value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem categoria</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Options */}
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded border-input"
+                  {...register('is_recommended')}
+                />
+                <span className="text-sm">Recomendado</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded border-input"
+                  {...register('is_active')}
+                />
+                <span className="text-sm">Ativo</span>
+              </label>
+            </div>
+
+            {/* Submit */}
+            <div className="flex gap-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Alteracoes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </form>
+    </div>
+  )
+}
