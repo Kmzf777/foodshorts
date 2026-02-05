@@ -12,6 +12,14 @@ export interface Restaurant {
   logo_url: string | null
   tables_count: number
   delivery_enabled: boolean
+  city: string | null
+  state: string | null
+  address_zipcode: string | null
+  address_street: string | null
+  address_number: string | null
+  address_complement: string | null
+  address_neighborhood: string | null
+  avg_prep_time: number
   plan: SubscriptionPlan
   plan_status: SubscriptionStatus
   plan_expires_at: string | null

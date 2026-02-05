@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, ClipboardList, UtensilsCrossed, Settings, LogOut } from 'lucide-react'
@@ -33,9 +35,16 @@ export function Sidebar({ restaurantName }: SidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col bg-card border-r">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">FoodShorts</span>
+      {/* Logo */}
+      <div className="flex h-20 items-center justify-center border-b px-6 bg-[#FF0000]">
+        <Link href="/dashboard" className="flex items-center justify-center gap-2 w-full">
+          <Image
+            src="/logo.png"
+            alt="FoodShorts Logo"
+            width={180}
+            height={60}
+            className="h-14 w-auto object-contain"
+          />
         </Link>
       </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useCartStore } from '@/stores/cartStore'
 import { VideoFeed } from '@/components/cardapio/VideoFeed'
 import { CategoryTabs } from '@/components/cardapio/CategoryTabs'
+import { SearchOverlay } from '@/components/cardapio/SearchOverlay'
 import { HeaderCartButton } from '@/components/cardapio/HeaderCartButton'
 import type { Product, Category, Restaurant, OrderOrigin } from '@/types'
 
@@ -44,9 +45,21 @@ export function CardapioClient({
 
   // Se não há recomendados, mostrar todos
   const displayProducts = filteredProducts.length > 0 ? filteredProducts : products
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   return (
     <div className="relative h-[100dvh] w-full bg-black overflow-x-hidden">
+      {/* Search Overlay */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-50">
+          <SearchOverlay
+            products={products}
+            categories={categories}
+            onClose={() => setIsSearchOpen(false)}
+          />
+        </div>
+      )}
+
       {/* Header com logo e tabs */}
       <div className="absolute top-0 left-0 right-0 z-40 safe-area-inset-top">
         <div className="p-4">
@@ -82,13 +95,14 @@ export function CardapioClient({
             activeTab={activeTab}
             onTabChange={setActiveTab}
             cartCount={itemCount}
+            onSearchClick={() => setIsSearchOpen(true)}
           />
         </div>
       </div>
 
       {/* Video Feed */}
       {displayProducts.length > 0 ? (
-        <VideoFeed products={displayProducts} />
+        <VideoFeed key={activeTab} products={displayProducts} />
       ) : (
         <div className="flex items-center justify-center h-full text-white">
           <p>Nenhum produto disponivel</p>

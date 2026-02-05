@@ -1,26 +1,37 @@
 'use client'
 
-import { Star, Grid, ShoppingBag } from 'lucide-react'
+import { Star, Grid, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Category } from '@/types'
 
-type TabType = 'recommended' | 'categories' | 'cart'
+type TabType = 'recommended' | 'categories'
 
 interface CategoryTabsProps {
   categories: Category[]
   activeTab: TabType | string
   onTabChange: (tab: TabType | string) => void
-  cartCount: number
+  onSearchClick: () => void
+  cartCount: number // Kept for compatibility if needed, but not used in this component anymore for badge
 }
 
 export function CategoryTabs({
   categories,
   activeTab,
   onTabChange,
+  onSearchClick,
   cartCount,
 }: CategoryTabsProps) {
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+      {/* Buscar */}
+      <button
+        onClick={onSearchClick}
+        className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors bg-white/20 text-white hover:bg-white/30"
+      >
+        <Search className="h-4 w-4" />
+        Buscar
+      </button>
+
       {/* Recomendados */}
       <button
         onClick={() => onTabChange('recommended')}
@@ -33,20 +44,6 @@ export function CategoryTabs({
       >
         <Star className="h-4 w-4" />
         Recomendados
-      </button>
-
-      {/* Todas Categorias */}
-      <button
-        onClick={() => onTabChange('categories')}
-        className={cn(
-          'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-          activeTab === 'categories'
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-white/20 text-white hover:bg-white/30'
-        )}
-      >
-        <Grid className="h-4 w-4" />
-        Todos
       </button>
 
       {/* Individual Categories */}
@@ -65,23 +62,18 @@ export function CategoryTabs({
         </button>
       ))}
 
-      {/* Cart */}
+      {/* Todas Categorias */}
       <button
-        onClick={() => onTabChange('cart')}
+        onClick={() => onTabChange('categories')}
         className={cn(
           'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-          activeTab === 'cart'
+          activeTab === 'categories'
             ? 'bg-primary text-primary-foreground'
             : 'bg-white/20 text-white hover:bg-white/30'
         )}
       >
-        <ShoppingBag className="h-4 w-4" />
-        Pedido
-        {cartCount > 0 && (
-          <span className="bg-white text-primary rounded-full px-2 py-0.5 text-xs font-bold">
-            {cartCount}
-          </span>
-        )}
+        <Grid className="h-4 w-4" />
+        Todos
       </button>
     </div>
   )
