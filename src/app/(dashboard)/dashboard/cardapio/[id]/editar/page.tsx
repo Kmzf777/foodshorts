@@ -56,33 +56,34 @@ export default function EditarProdutoPage() {
 
       const supabase = createClient()
 
-      const [productRes, categoriesRes] = await Promise.all([
-        supabase
-          .from('products')
-          .select('*')
-          .eq('id', productId)
-          .eq('restaurant_id', restaurant.id)
-          .single(),
-        supabase
-          .from('categories')
-          .select('*')
-          .eq('restaurant_id', restaurant.id)
-          .eq('is_active', true)
-          .order('sort_order'),
-      ])
+      // Fetch product
+      const productRes = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .eq('restaurant_id', restaurant.id)
+        .single()
 
-      if (productRes.data) {
-        const p = productRes.data as Product
-        setProduct(p)
+      const productData = productRes.data as Product | null
+      if (productData) {
+        setProduct(productData)
         reset({
-          name: p.name,
-          description: p.description || '',
-          price: p.price,
-          category_id: p.category_id,
-          is_recommended: p.is_recommended,
-          is_active: p.is_active,
+          name: productData.name,
+          description: productData.description || '',
+          price: productData.price,
+          category_id: productData.category_id,
+          is_recommended: productData.is_recommended,
+          is_active: productData.is_active,
         })
       }
+
+      // Fetch categories
+      const categoriesRes = await supabase
+        .from('categories')
+        .select('*')
+        .eq('restaurant_id', restaurant.id)
+        .eq('is_active', true)
+        .order('sort_order')
 
       setCategories((categoriesRes.data as Category[]) || [])
       setIsFetching(false)
@@ -145,8 +146,8 @@ export default function EditarProdutoPage() {
           description: data.description,
           price: data.price,
           category_id: data.category_id || null,
-          is_recommended: data.is_recommended,
-          is_active: data.is_active,
+          is_recommended: data.is_recommended ?? false,
+          is_active: data.is_active ?? true,
           video_url: videoUrl,
           video_thumbnail_url: thumbnailUrl,
           video_duration: videoDuration,

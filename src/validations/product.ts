@@ -5,8 +5,8 @@ export const productSchema = z.object({
   description: z.string().max(500, 'Descrição deve ter no máximo 500 caracteres').optional(),
   price: z.number().positive('Preço deve ser maior que zero'),
   category_id: z.string().uuid('Categoria inválida').optional().nullable(),
-  is_recommended: z.boolean().optional().default(false),
-  is_active: z.boolean().optional().default(true),
+  is_recommended: z.boolean().default(false),
+  is_active: z.boolean().default(true),
 })
 
 export const categorySchema = z.object({
@@ -15,5 +15,7 @@ export const categorySchema = z.object({
   is_active: z.boolean().default(true),
 })
 
-export type ProductInput = z.infer<typeof productSchema>
-export type CategoryInput = z.infer<typeof categorySchema>
+export type ProductInput = z.input<typeof productSchema>
+export type ProductOutput = z.output<typeof productSchema>
+export type CategoryInput = z.input<typeof categorySchema>
+export type CategoryOutput = z.output<typeof categorySchema>

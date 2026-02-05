@@ -1,14 +1,13 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { Suspense, useEffect, useState, useTransition } from "react";
 import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { createCheckoutSession } from "@/app/actions/checkout";
 import { toast } from "sonner";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 const PLANS = {
     monthly: {
@@ -34,7 +33,7 @@ const PLANS = {
     },
 };
 
-export default function CheckoutPage() {
+function CheckoutContent() {
     const searchParams = useSearchParams();
     const planParam = searchParams.get("plan");
     const [isPending, startTransition] = useTransition();
@@ -146,5 +145,13 @@ export default function CheckoutPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function CheckoutPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <CheckoutContent />
+        </Suspense>
     );
 }

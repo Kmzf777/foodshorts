@@ -316,5 +316,8 @@ export type Database = {
       order_status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'canceled'
       payment_method: 'cash' | 'credit' | 'debit' | 'pix'
     }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
